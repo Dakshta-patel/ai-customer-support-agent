@@ -105,6 +105,24 @@ class PolicyClassificationTests(unittest.TestCase):
             "account_security_compromise",
         )
 
+    def test_account_fraud_report_escalates_with_account_security_reason(self) -> None:
+        decision = classify_policy("I want to report fraud on my account.")
+
+        self.assertTrue(decision.should_escalate)
+        self.assertEqual(decision.policy_category, PolicyCategory.ACCOUNT_SECURITY)
+        self.assertEqual(decision.rule_match, "account_security_compromise")
+        self.assertEqual(
+            decision.escalation_reason,
+            "The request involves account security or ownership verification.",
+        )
+
+    def test_ordinary_account_question_does_not_escalate(self) -> None:
+        self.assert_does_not_escalate(
+            "How do I reset my password?",
+            PolicyCategory.ACCOUNT_SECURITY,
+            "ordinary_account_question",
+        )
+
     def test_ordinary_payment_failure(self) -> None:
         self.assert_does_not_escalate(
             "Why did my payment fail?",

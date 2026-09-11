@@ -63,6 +63,7 @@ def classify_policy(query: str) -> PolicyDecision:
         normalized_query,
         (
             "account takeover",
+            "fraud on my account",
             "someone accessed my account",
             "unfamiliar contact detail",
             "unfamiliar contact information",

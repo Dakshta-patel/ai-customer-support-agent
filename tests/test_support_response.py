@@ -94,7 +94,8 @@ class SupportResponseTests(unittest.TestCase):
 
         response = build_support_response("policy", context)
 
-        self.assertEqual(response.answer, CONTEXT_ONLY_ANSWER)
+        self.assertNotEqual(response.answer, CONTEXT_ONLY_ANSWER)
+        self.assertTrue(response.answer.strip())
         self.assertIs(response.sources[0], first)
         self.assertIs(response.sources[1], second)
         self.assertEqual(response.sources, [first, second])

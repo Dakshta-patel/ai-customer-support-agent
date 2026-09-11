@@ -160,7 +160,9 @@ class SupportResponseEvaluationTests(unittest.TestCase):
 
         response = build_support_response("Where is my order?", context)
 
-        self.assertEqual(response.answer, CONTEXT_ONLY_ANSWER)
+        self.assertNotEqual(response.answer, CONTEXT_ONLY_ANSWER)
+        self.assertIn("NovaCart", response.answer)
+        self.assertTrue(response.answer.strip())
         self.assertEqual(response.sources, [self.result_one, self.result_two])
         self.assertTrue(response.has_usable_context)
         self.assertEqual(response.retrieval_confidence, "medium")

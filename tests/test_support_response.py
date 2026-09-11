@@ -1,4 +1,5 @@
 import unittest
+from dataclasses import fields
 
 from backend.app.context import PreparedContext
 from backend.app.support_response import (
@@ -36,6 +37,32 @@ def make_context(
 
 
 class SupportResponseTests(unittest.TestCase):
+    def test_support_response_contract_fields_are_unchanged(self) -> None:
+        self.assertEqual(
+            [field.name for field in fields(type(make_context("", [], False)))],
+            [
+                "query",
+                "results",
+                "context_text",
+                "result_count",
+                "has_usable_context",
+            ],
+        )
+
+        response = build_support_response("delivery", make_context("delivery", [], False))
+        self.assertEqual(
+            [field.name for field in fields(response)],
+            [
+                "answer",
+                "sources",
+                "has_usable_context",
+                "retrieval_confidence",
+                "confidence_reason",
+                "should_escalate",
+                "escalation_reason",
+            ],
+        )
+
     def test_empty_query_fallback(self) -> None:
         context = make_context("", [], False)
 
@@ -110,6 +137,37 @@ class SupportResponseTests(unittest.TestCase):
         self.assertEqual(response.escalation_reason, DEFAULT_ESCALATION_REASON)
         self.assertFalse(response.has_usable_context)
         self.assertEqual(response.sources, [])
+
+    def test_empty_string_escalation_reason_uses_default(self) -> None:
+        context = make_context("security concern", [], False)
+
+        response = build_support_response(
+            "security concern",
+            context,
+            should_escalate=True,
+            escalation_reason="",
+        )
+
+        self.assertEqual(response.answer, ESCALATION_ANSWER)
+        self.assertEqual(response.escalation_reason, DEFAULT_ESCALATION_REASON)
+
+    def test_policy_style_escalation_keeps_reason_structural_and_answer_generic(self) -> None:
+        context = make_context("account takeover", [], False)
+
+        response = build_support_response(
+            "account takeover",
+            context,
+            should_escalate=True,
+            escalation_reason="The request involves account security or ownership verification.",
+        )
+
+        self.assertEqual(response.answer, ESCALATION_ANSWER)
+        self.assertNotIn("account_security", response.answer)
+        self.assertNotIn("compromise", response.answer)
+        self.assertEqual(
+            response.escalation_reason,
+            "The request involves account security or ownership verification.",
+        )
 
     def test_empty_query_overrides_escalation_request(self) -> None:
         context = make_context("", [], False)

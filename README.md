@@ -349,7 +349,6 @@ The test suite checks important behavior such as:
 - The system does not send emails or create real support tickets.
 - Retrieval confidence is based on the current prototype's retrieval logic.
 - The project is not connected to a production customer-support platform.
-- The project is separate from the Hiver customer-support assignment.
 
 ## Example Workflow
 

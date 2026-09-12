@@ -44,90 +44,99 @@ def _clean_text(text: str) -> str:
     return " ".join(text.split())
 
 
-def _generate_context_answer(
-    query: str,
-    sources: list[SearchResult],
-) -> str:
-    """Generate a simple answer from retrieved policy context."""
+def _generate_context_answer(query, sources):
+    normalized_query = _clean_text(query).lower()
 
     if not sources:
         return NO_CONTEXT_ANSWER
 
-    best_source = sources[0]
-    policy_text = _clean_text(best_source.text)
-
-    query_lower = query.lower()
-
-    if "track" in query_lower or "tracking" in query_lower:
+    if (
+        "where is my order" in normalized_query
+        or "track my order" in normalized_query
+        or "track order" in normalized_query
+        or "tracking" in normalized_query
+        or "tracking details" in normalized_query
+    ):
         return (
-            "Tracking information is provided after your order is dispatched. "
-            "You can track your order using its order ID. If your order has "
-            "already been dispatched and tracking is missing or incorrect, "
-            "contact NovaCart support with your order ID."
-        )
-
-    if "cancel" in query_lower:
-        return (
-            "NovaCart allows cancellation before dispatch. Cancellation after "
-            "dispatch is not guaranteed because the shipment may already be "
-            "with the carrier. Contact support promptly, and wait for support "
-            "to confirm the final cancellation status."
+            "Tracking details are provided after dispatch. "
+            "Check your order history for tracking information. "
+            "If tracking is missing or appears incorrect, contact NovaCart support "
+            "with your order ID."
         )
 
     if (
-        "wrong item" in query_lower
-        or "damaged" in query_lower
-        or "defective" in query_lower
-        or "broken" in query_lower
+        "cancel" in normalized_query
+        or "cancellation" in normalized_query
     ):
         return (
-            "For a damaged, defective, or incorrect item, contact NovaCart "
-            "support within 30 days of delivery with your order ID and item "
-            "details. Provide clear photographs of the item, packaging, and "
-            "shipping label when requested. Wait for return instructions "
-            "before sending the item back."
-        )
-
-    if "return" in query_lower:
-        return (
-            "To return an item, contact NovaCart support within 30 days of "
-            "delivery with your order ID and item details. Explain the reason "
-            "for the return, provide requested information, and wait for "
-            "return instructions and approval before shipping the item."
+            "NovaCart allows cancellation before dispatch. "
+            "Cancellation after dispatch is not guaranteed because the shipment "
+            "may already be with the carrier. Contact support promptly and wait "
+            "for support to confirm the final cancellation status."
         )
 
     if (
-        "payment" in query_lower
-        or "charged" in query_lower
-        or "deducted" in query_lower
+        "damaged" in normalized_query
+        or "damage" in normalized_query
+        or "defective" in normalized_query
+        or "defect" in normalized_query
+        or "wrong item" in normalized_query
+        or "incorrect item" in normalized_query
     ):
         return (
-            "If payment was deducted but you did not receive an order "
-            "confirmation, do not place another order immediately. Check for "
-            "a confirmation message and contact NovaCart support with the "
+            "Report a damaged, defective, or incorrect item to NovaCart support "
+            "as soon as possible. Include your order ID and clear photographs "
+            "of the item, packaging, and shipping label when requested. "
+            "Do not share passwords, OTPs, CVVs, full card numbers, or unrelated "
+            "personal information. Wait for return instructions before sending "
+            "the item back."
+        )
+
+    if (
+        "payment" in normalized_query
+        or "charged" in normalized_query
+        or "deducted" in normalized_query
+        or "debited" in normalized_query
+    ):
+        return (
+            "If payment was deducted but you did not receive an order confirmation, "
+            "do not place another order immediately. Check your order history and "
+            "email for a delayed confirmation. Contact NovaCart support with the "
             "payment time, amount, and transaction reference if available. "
             "Never share your full card number, CVV, password, or OTP."
         )
 
     if (
-        "contact" in query_lower
-        or "support" in query_lower
-        or "help" in query_lower
+        "return" in normalized_query
+        or "refund" in normalized_query
     ):
         return (
-            "You can contact NovaCart support at "
-            "support@novacart.example during the published support hours. "
-            "Include only the information needed to locate your request, "
-            "such as your order ID. Do not share passwords, OTPs, CVVs, or "
-            "full card numbers."
+            "Check whether your order and item are eligible under NovaCart's "
+            "return or refund policy. Contact support with your order ID and "
+            "the relevant return or refund status. Do not send the item back "
+            "until support provides return instructions."
         )
 
-    return (
-        "According to NovaCart policy: "
-        f"{policy_text} "
-        "If you need further help, contact NovaCart support with your order ID."
-    )
+    if (
+        "support" in normalized_query
+        or "help" in normalized_query
+        or "contact" in normalized_query
+    ):
+        return (
+            "Email support@novacart.example during the published support hours. "
+            "Include only the information needed to locate the request, such as "
+            "an order ID. Do not share passwords, OTPs, CVVs, or full card numbers."
+        )
 
+    best_source = sources[0].text.strip()
+
+    if best_source.startswith("### "):
+        best_source = best_source[4:]
+
+    if best_source.startswith("## "):
+        best_source = best_source[3:]
+
+    return f"According to NovaCart policy: {best_source}"
 
 def build_support_response(
     query: str,
